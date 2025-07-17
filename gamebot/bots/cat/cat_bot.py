@@ -27,10 +27,14 @@ class CatBot():
         
         while True:
             msg: Message = await self.subscription.get()
+            try:
 
-            if msg.user in self.whitelisted_users and msg.text == '!cat':
+                if msg.user in self.whitelisted_users and msg.text == '!cat':
 
-                img = await self.cat_api.fetch_image_bytes()                
+                    img = await self.cat_api.fetch_image_bytes()                
 
-                post_msg = PostMessage(text='Here is a random cat', pic=img)
+                    post_msg = PostMessage(text='Here is a random cat', pic=img)
+                    await self.topic.put(post_msg)
+            except ConnectionError:
+                post_msg = PostMessage(text='The cat isnt in the mood to be seen', pic=None)
                 await self.topic.put(post_msg)
