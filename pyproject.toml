@@ -1,0 +1,14 @@
+[project]
+name = "gamebot"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "asyncio>=3.4.3",
+    "cachetools>=6.1.0",
+    "httpx>=0.28.1",
+    "pint>=0.24.4",
+    "pydantic>=2.11.7",
+    "python-socketio[async-client,asyncio-client,asynioc-client,client]>=5.13.0",
+]
