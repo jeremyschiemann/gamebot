@@ -69,18 +69,9 @@ class BlhBlhAdapter:
             logger.info("BlhBlhAdapter: Connected to Socket.IO server!")
 
         @self.sio.event
-        async def disconnect():
-            logger.info("BlhBlhAdapter: Disconnected from Socket.IO server.")
-            self.cookie = await self._login()
-            if not self.cookie:
-                logger.error("BlhBlhAdapter: Failed to obtain login cookie. Cannot connect.")
-                return
-
-            logger.info("BlhBlhAdapter: Reconnecting to Socket.IO...")
-            await self.sio.connect(
-                'https://blhblh.be/socket.io/',
-                headers={'Cookie': self.cookie},
-            )
+        async def disconnect(reason):
+            logger.info(f"BlhBlhAdapter: Disconnected from Socket.IO server. ({reason})")
+            
 
         @self.sio.event
         async def messages(data: list[dict[str, Any]]):
@@ -138,47 +129,48 @@ class BlhBlhAdapter:
         """
         logger.info("BlhBlhAdapter task started.")
 
-        try:
-            self.cookie = await self._login()
-            if not self.cookie:
-                logger.error("BlhBlhAdapter: Failed to obtain login cookie. Cannot connect.")
-                return
+        while True:
+            try:
+                self.cookie = await self._login()
+                if not self.cookie:
+                    logger.error("BlhBlhAdapter: Failed to obtain login cookie. Cannot connect.")
+                    return
 
-            logger.info("BlhBlhAdapter: Connecting to Socket.IO...")
-            await self.sio.connect(
-                'https://blhblh.be/socket.io/',
-                headers={'Cookie': self.cookie},
-            )
+                logger.info("BlhBlhAdapter: Connecting to Socket.IO...")
+                await self.sio.connect(
+                    'https://blhblh.be/socket.io/',
+                    headers={'Cookie': self.cookie},
+                )
 
-            # The `message` event handler will now automatically receive and publish
-            # We just need to keep the connection alive and periodically ask for new messages
-            while self.sio.connected:
-                try:
-                    await asyncio.sleep(5) # Poll every 5 seconds
-                    if self.sio.connected: # Check connection again before emitting
-                        await self.sio.emit('fetchMessages', '')
-                except socketio.exceptions.DisconnectedError:
-                    logger.info("BlhBlhAdapter: Socket.IO client disconnected during polling.")
-                    break
-                except asyncio.CancelledError:
-                    logger.info("BlhBlhAdapter: connect_and_poll task cancelled.")
-                    break
-                except Exception as e:
-                    logger.error(f"BlhBlhAdapter: An error occurred during polling: {e}", exc_info=True)
-                    # Consider a backoff strategy or re-connection attempt here
-                    break
+                # The `message` event handler will now automatically receive and publish
+                # We just need to keep the connection alive and periodically ask for new messages
+                while self.sio.connected:
+                    try:
+                        await asyncio.sleep(5) # Poll every 5 seconds
+                        if self.sio.connected: # Check connection again before emitting
+                            await self.sio.emit('fetchMessages', '')
+                    except socketio.exceptions.DisconnectedError:
+                        logger.info("BlhBlhAdapter: Socket.IO client disconnected during polling.")
+                        break
+                    except asyncio.CancelledError:
+                        logger.info("BlhBlhAdapter: connect_and_poll task cancelled.")
+                        break
+                    except Exception as e:
+                        logger.error(f"BlhBlhAdapter: An error occurred during polling: {e}", exc_info=True)
+                        # Consider a backoff strategy or re-connection attempt here
+                        break
 
-        except httpx.HTTPStatusError as e:
-            logger.error(f"BlhBlhAdapter: HTTP Login failed: {e.response.status_code} - {e.response.text}", exc_info=True)
-        except socketio.exceptions.ConnectionError as e:
-            logger.error(f"BlhBlhAdapter: Socket.IO connection failed: {e}", exc_info=True)
-        except Exception as e:
-            logger.critical(f"BlhBlhAdapter: An unexpected critical error in connect_and_poll: {e}", exc_info=True)
-        finally:
-            if self.sio.connected:
-                logger.info("BlhBlhAdapter: Disconnecting Socket.IO client.")
-                await self.sio.disconnect()
-            BlhBlhAdapter._sio_client_instance = None # Clear global reference on shutdown
+            except httpx.HTTPStatusError as e:
+                logger.error(f"BlhBlhAdapter: HTTP Login failed: {e.response.status_code} - {e.response.text}", exc_info=True)
+            except socketio.exceptions.ConnectionError as e:
+                logger.error(f"BlhBlhAdapter: Socket.IO connection failed: {e}", exc_info=True)
+            except Exception as e:
+                logger.critical(f"BlhBlhAdapter: An unexpected critical error in connect_and_poll: {e}", exc_info=True)
+            finally:
+                if self.sio.connected:
+                    logger.info("BlhBlhAdapter: Disconnecting Socket.IO client.")
+                    await self.sio.disconnect()
+
     
 
     async def post_messages(self):
