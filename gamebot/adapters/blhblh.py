@@ -62,16 +62,18 @@ class BlhBlhAdapter:
         self.subscribers: dict[str, asyncio.Queue] = {}
         self.topic = asyncio.Queue()
         self.http_client = httpx.Client()
+        self.sio_connected_event = asyncio.Event()
 
         # Register Socket.IO event handlers
         @self.sio.event
         async def connect():
             logger.info("BlhBlhAdapter: Connected to Socket.IO server!")
+            self.sio_connected_event.set()
 
         @self.sio.event
         async def disconnect(reason):
             logger.info(f"BlhBlhAdapter: Disconnected from Socket.IO server. ({reason})")
-            
+            self.sio_connected_event.clear()
 
         @self.sio.event
         async def messages(data: list[dict[str, Any]]):
@@ -205,7 +207,10 @@ class BlhBlhAdapter:
                         print('error', str(e))
 
                 ack_event.set()
+            
 
+            await self.sio_connected_event.wait()
+            
             await self.sio.emit(
                 event='postMessage', 
                 data={
@@ -214,6 +219,7 @@ class BlhBlhAdapter:
                 },
                 callback=ack_handler
             )
+            
             await asyncio.wait_for(ack_event.wait(), timeout=10)
 
     
