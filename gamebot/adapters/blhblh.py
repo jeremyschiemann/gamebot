@@ -71,6 +71,16 @@ class BlhBlhAdapter:
         @self.sio.event
         async def disconnect():
             logger.info("BlhBlhAdapter: Disconnected from Socket.IO server.")
+            self.cookie = await self._login()
+            if not self.cookie:
+                logger.error("BlhBlhAdapter: Failed to obtain login cookie. Cannot connect.")
+                return
+
+            logger.info("BlhBlhAdapter: Reconnecting to Socket.IO...")
+            await self.sio.connect(
+                'https://blhblh.be/socket.io/',
+                headers={'Cookie': self.cookie},
+            )
 
         @self.sio.event
         async def messages(data: list[dict[str, Any]]):
