@@ -40,7 +40,7 @@ async def main():
 
     username = os.environ.get('blh_user')
     password = os.environ.get('blh_pw')
-    config_dir = os.environ.get('config_dir')
+    config_dir = os.environ.get('blh_config_dir')
 
     if not config_dir:
         logger.error('no config provided')
