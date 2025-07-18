@@ -149,8 +149,8 @@ class BlhBlhAdapter:
                 while self.sio.connected:
                     try:
                         await asyncio.sleep(5) # Poll every 5 seconds
-                        if self.sio.connected: # Check connection again before emitting
-                            await self.sio.emit('fetchMessages', '')
+                        await self.sio_connected_event.wait()
+                        await self.sio.emit('fetchMessages', '')
                     except socketio.exceptions.DisconnectedError:
                         logger.info("BlhBlhAdapter: Socket.IO client disconnected during polling.")
                         break
@@ -172,6 +172,9 @@ class BlhBlhAdapter:
                 if self.sio.connected:
                     logger.info("BlhBlhAdapter: Disconnecting Socket.IO client.")
                     await self.sio.disconnect()
+
+            await asyncio.sleep(10)
+
 
     
 

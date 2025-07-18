@@ -61,14 +61,40 @@ async def main():
 
 
     # Start the adapter in a separate task
-    blhblh_task = asyncio.create_task(blhblh_adapter.connect_and_poll())
-    publish_task = asyncio.create_task(blhblh_adapter.post_messages())
-    dog_task = asyncio.create_task(dog_bot.work())
-    cat_task = asyncio.create_task(cat_bot.work())
+    #blhblh_task = asyncio.create_task(blhblh_adapter.connect_and_poll())
+    #publish_task = asyncio.create_task(blhblh_adapter.post_messages())
+    #dog_task = asyncio.create_task(dog_bot.work())
+    #cat_task = asyncio.create_task(cat_bot.work())
+    #log_task = asyncio.create_task(log_bot.work())
 
+    tasks = {
+        'blh': {
+            'task': None,
+            'coro': blhblh_adapter.connect_and_poll,
+        },
+        'publish': {
+            'task': None,
+            'coro': blhblh_adapter.post_messages
+        },
+        'dog': {
+            'task': None,
+            'coro': dog_bot.work,
+        },
+        'cat': {
+            'task': None,
+            'coro': cat_bot.work,
+        },
+        'log': {
+            'task': None,
+            'coro': log_bot.work,
+        },
+    }
 
-   
-    await log_bot.work()
+    while True:
+        for task_name, task_info in tasks.items():
+            task = task_info['task']
+            if task is None or task.done():
+                tasks[task_name]['task'] = asyncio.create_task(task_info['coro']()) 
 
 
 # --- Entry point ---
