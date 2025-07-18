@@ -41,12 +41,12 @@ async def main():
     username = os.environ.get('blh_user')
     password = os.environ.get('blh_pw')
     
-    config_dir = Path('/config')
-    if not config_dir.exists():
-        logger.error('config dir doesnt exist')
+    config_path = Path('/config/config.yaml')
+    if not config_path.exists():
+        logger.error('config file doesnt exist')
         return
     
-    with config_dir.open() as config_f:
+    with config_path.open() as config_f:
         config_parsed = yaml.safe_load(config_f)
 
     try:
