@@ -71,6 +71,7 @@ class BlhBlhAdapter:
         self.topic = asyncio.Queue()
         self.http_client = httpx.Client()
         self.sio_connected_event = asyncio.Event()
+        self.sio_connected_event.clear()
 
         # Register Socket.IO event handlers
         @self.sio.event
@@ -114,7 +115,7 @@ class BlhBlhAdapter:
             Parses them and publishes valid Message events.
             """
             print(event, sid, data)
-     
+ 
 
     async def _login(self) -> str:
         """
@@ -132,6 +133,28 @@ class BlhBlhAdapter:
             self.cookie = '; '.join([f'{cookie_name}={cookie_value}' for cookie_name, cookie_value in http_client.cookies.items()])
             logger.info("BlhBlhAdapter: Successfully logged in and extracted cookie.")
             return self.cookie
+        
+
+    async def reconnect_task(self):
+
+        while True:
+            self.cookie = await self._login()
+            if not self.cookie:
+                logger.error('Can not obtain login cookie.')
+                return
+            
+            logger.info('Connecting to Socket.io')
+            await self.sio.connect(
+                'https://blhblh.be/',
+                headers={'Cookie': self.cookie},
+                socketio_path='socket.io',
+                retry=True,
+            )
+
+            await self.sio.wait()
+            await asyncio.sleep(5)
+
+
 
     async def connect_and_poll(self):
         """
@@ -141,22 +164,11 @@ class BlhBlhAdapter:
 
         while True:
             try:
-                self.cookie = await self._login()
-                if not self.cookie:
-                    logger.error("BlhBlhAdapter: Failed to obtain login cookie. Cannot connect.")
-                    return
-
-                logger.info("BlhBlhAdapter: Connecting to Socket.IO...")
-                await self.sio.connect(
-                    'https://blhblh.be/socket.io/',
-                    headers={'Cookie': self.cookie},
-                )
 
                 # The `message` event handler will now automatically receive and publish
                 # We just need to keep the connection alive and periodically ask for new messages
                 while self.sio.connected:
                     try:
-                        await asyncio.sleep(5) # Poll every 5 seconds
                         await self.sio_connected_event.wait()
                         await self.sio.emit('fetchMessages', '')
                     except socketio.exceptions.DisconnectedError:
@@ -169,6 +181,8 @@ class BlhBlhAdapter:
                         logger.error(f"BlhBlhAdapter: An error occurred during polling: {e}", exc_info=True)
                         # Consider a backoff strategy or re-connection attempt here
                         break
+
+                    await asyncio.sleep(10)
 
             except httpx.HTTPStatusError as e:
                 logger.error(f"BlhBlhAdapter: HTTP Login failed: {e.response.status_code} - {e.response.text}", exc_info=True)

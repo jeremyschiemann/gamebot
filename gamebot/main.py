@@ -95,6 +95,10 @@ async def main():
 
 
     tasks = {
+        'blh_connect': {
+            'task': None,
+            'coro': blhblh_adapter.reconnect_task,
+        },
         'blh': {
             'task': None,
             'coro': blhblh_adapter.connect_and_poll,
