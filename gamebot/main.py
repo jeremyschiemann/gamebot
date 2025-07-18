@@ -92,7 +92,7 @@ async def main():
         },
         'blackjack': {
             'task': None,
-            'coro': blackjack_bot.work(),
+            'coro': blackjack_bot.work,
         }
     }
 
