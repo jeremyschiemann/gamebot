@@ -95,6 +95,8 @@ async def main():
             task = task_info['task']
             if task is None or task.done():
                 tasks[task_name]['task'] = asyncio.create_task(task_info['coro']()) 
+        
+        await asyncio.sleep(10)
 
 
 # --- Entry point ---
