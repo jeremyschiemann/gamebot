@@ -41,7 +41,7 @@ class PostMessage(pydantic.BaseModel):
 
 class AckResult(pydantic.BaseModel):
     result: str
-    pic_url: pydantic.HttpUrl = pydantic.Field(..., alias='picUrl')
+    pic_url: pydantic.HttpUrl | None = pydantic.Field(..., alias='picUrl')
 
     @pydantic.field_validator('pic_url', mode='before')
     @classmethod
