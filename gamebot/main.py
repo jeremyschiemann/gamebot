@@ -5,6 +5,7 @@ import sys
 import logging
 
 from gamebot.adapters.blhblh import BlhBlhAdapter, Message
+from gamebot.bots.blackjack.blackjack_bot import BlackjackBot
 from gamebot.bots.cat.cat_bot import CatBot
 from gamebot.bots.dog.dog_bot import DogBot
 from gamebot.bots.log_bot import LogBot
@@ -59,13 +60,14 @@ async def main():
         subscription=blhblh_adapter.subscribe('LogBot'),
     )
 
+    blackjack_bot = BlackjackBot(
+        whitelisted_users={
+            'Jeremy.is.here',
+        },
+        subscription=blhblh_adapter.subscribe('Blackjack'),
+        topic=blhblh_adapter.topic,
+    )
 
-    # Start the adapter in a separate task
-    #blhblh_task = asyncio.create_task(blhblh_adapter.connect_and_poll())
-    #publish_task = asyncio.create_task(blhblh_adapter.post_messages())
-    #dog_task = asyncio.create_task(dog_bot.work())
-    #cat_task = asyncio.create_task(cat_bot.work())
-    #log_task = asyncio.create_task(log_bot.work())
 
     tasks = {
         'blh': {
@@ -88,6 +90,10 @@ async def main():
             'task': None,
             'coro': log_bot.work,
         },
+        'blackjack': {
+            'task': None,
+            'coro': blackjack_bot.work(),
+        }
     }
 
     while True:
