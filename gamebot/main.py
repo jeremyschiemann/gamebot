@@ -1,8 +1,11 @@
 # main.py
 import asyncio
 import os
+from pathlib import Path
 import sys
 import logging
+import yaml
+import pydantic
 
 from gamebot.adapters.blhblh import BlhBlhAdapter, Message
 from gamebot.bots.blackjack.blackjack_bot import BlackjackBot
@@ -19,6 +22,17 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
+class WhitelistConfig(pydantic.BaseModel):
+    whitelisted_users: set[str]
+
+
+class ConfigModel(pydantic.BaseModel):
+    dog_bot: WhitelistConfig
+    cat_bot: WhitelistConfig
+    blackjack_bot: WhitelistConfig
+
+
+
 # --- Main application logic ---
 async def main():
     logger.info("Starting BlhBlh Bot Application...")
@@ -26,6 +40,26 @@ async def main():
 
     username = os.environ.get('blh_user')
     password = os.environ.get('blh_pw')
+    config_dir = os.environ.get('config_dir')
+
+    if not config_dir:
+        logger.error('no config provided')
+        return
+    
+    config_dir = Path(config_dir)
+    if not config_dir.exists():
+        logger.error('config dir doesnt exist')
+        return
+    
+    with config_dir.open() as config_f:
+        config_parsed = yaml.safe_load(config_f)
+
+    try:
+        config = ConfigModel.model_validate(config_parsed)
+    except pydantic.ValidationError as e:
+        logger.error(f'Invalid config: {e}')
+        return
+    
 
     if not username or not password:
         logger.error('no user or pw found')
@@ -38,19 +72,13 @@ async def main():
 
 
     dog_bot = DogBot(
-        whitelisted_users={
-            "Jeremy.is.here",
-            "officialtittytoucher"
-         }, 
+        whitelisted_users=config.dog_bot.whitelisted_users, 
         subscription=blhblh_adapter.subscribe('DogBot'),
         topic=blhblh_adapter.topic    
     )
 
     cat_bot = CatBot(
-        whitelisted_users={
-            "Jeremy.is.here",
-            "one.sad.potato"
-        }, 
+        whitelisted_users=config.cat_bot.whitelisted_users, 
         subscription=blhblh_adapter.subscribe('CatBot'),
         topic=blhblh_adapter.topic    
     )
@@ -61,9 +89,7 @@ async def main():
     )
 
     blackjack_bot = BlackjackBot(
-        whitelisted_users={
-            'Jeremy.is.here',
-        },
+        whitelisted_users=config.blackjack_bot.whitelisted_users,
         subscription=blhblh_adapter.subscribe('Blackjack'),
         topic=blhblh_adapter.topic,
     )
