@@ -9,6 +9,9 @@ WORKDIR /app
 # Copy project files
 COPY . .
 
+RUN mkdir -p /config
+
+
 # Install dependencies
 RUN uv sync --locked
 
