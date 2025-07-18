@@ -44,6 +44,10 @@ async def main():
     config_path = Path('/config/config.yaml')
     if not config_path.exists():
         logger.error('config file doesnt exist')
+
+        with config_path.open('w') as f:
+            f.write('put config here')
+
         return
     
     with config_path.open() as config_f:
