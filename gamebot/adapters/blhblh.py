@@ -43,6 +43,14 @@ class AckResult(pydantic.BaseModel):
     result: str
     pic_url: pydantic.HttpUrl = pydantic.Field(..., alias='picUrl')
 
+    @pydantic.field_validator('pic_url', mode='before')
+    @classmethod
+    def empty_str_to_none(cls, value: str) -> str | None:
+        if value == '':
+            return None
+        
+        return value
+
 
 
 class BlhBlhAdapter:
@@ -199,7 +207,7 @@ class BlhBlhAdapter:
 
                 logger.info(f"BlhBlhAdapter: Server acknowledged 'postMessage' with: {response_data_parsed}")
 
-                if response_data_parsed.pic_url != '':
+                if response_data_parsed.pic_url:
                     upload_headers = {'Content-Type': 'image/jpeg'} # This is usually sufficient
 
                     try:
