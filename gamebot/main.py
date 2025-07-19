@@ -10,6 +10,8 @@ import pydantic
 from gamebot.adapters.blhblh import BlhBlhAdapter, Message
 from gamebot.bots.blackjack.blackjack_bot import BlackjackBot
 from gamebot.bots.cat.cat_bot import CatBot
+from gamebot.bots.coin_bot import CoinBot
+from gamebot.bots.dice_bot import DiceBot
 from gamebot.bots.dog.dog_bot import DogBot
 from gamebot.bots.log_bot import LogBot
 logging.basicConfig(
@@ -93,6 +95,16 @@ async def main():
         topic=blhblh_adapter.topic,
     )
 
+    coin_bot = CoinBot(
+        subscription=blhblh_adapter.subscribe('Coin'),
+        topic=blhblh_adapter.topic,
+    )
+
+    dice_bot = DiceBot(
+        subscription=blhblh_adapter.subscribe('Dice'),
+        topic=blhblh_adapter.topic,
+    )
+
 
     tasks = {
         'blh_connect': {
@@ -122,6 +134,14 @@ async def main():
         'blackjack': {
             'task': None,
             'coro': blackjack_bot.work,
+        },
+        'coin': {
+            'task': None,
+            'coro': coin_bot.work,
+        },
+        'dice': {
+            'task': None,
+            'coro': dice_bot.work,
         }
     }
 

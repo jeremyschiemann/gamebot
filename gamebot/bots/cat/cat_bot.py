@@ -42,7 +42,7 @@ class CatBot():
             try:
 
                 if msg.user in self.whitelisted_users and msg.text == '!cat':
-
+                    logger.info(f'{msg.user} requested a cat. ({msg.text})')
                     img = await self.cat_api.fetch_image_bytes()                
 
                     post_msg = PostMessage(text='Here is a random cat {}'.format(next(emoji_id)), pic=img)

@@ -64,7 +64,7 @@ class BlhBlhAdapter:
         self.username = username
         self.password = password
         self.cookie: Optional[str] = None
-        self.sio = socketio.AsyncClient()
+        self.sio = socketio.AsyncClient(logger=True)
         self.dedup_cache = LRUCache(maxsize=2**10)
         self.only_after = datetime.datetime.now(datetime.timezone.utc)
         self.subscribers: dict[str, asyncio.Queue] = {}
@@ -148,6 +148,7 @@ class BlhBlhAdapter:
                     'https://blhblh.be/',
                     headers={'Cookie': self.cookie},
                     socketio_path='socket.io',
+                    transports=['polling', 'websocket'],
                     retry=True,
                 )
 

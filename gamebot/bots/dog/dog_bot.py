@@ -40,6 +40,8 @@ class DogBot():
             msg: Message = await self.subscription.get()
             try:
                 if msg.user in self.whitelisted_users and msg.text.startswith('!dog'):
+                    logger.info(f'{msg.user} requested a dog. ({msg.text})')
+
 
                     if msg.text == '!dog':
                         img = await self.dog_api.fetch_image_bytes()
