@@ -102,7 +102,6 @@ class BlhBlhAdapter:
                 logger.error(f"BlhBlhAdapter: An unexpected error processing message event: {e}", exc_info=True)
 
 
-
         @self.sio.on('onUserInfo')
         async def user_info_handler(data):
             logger.info('ignoring user info...')
@@ -138,21 +137,21 @@ class BlhBlhAdapter:
     async def reconnect_task(self):
 
         while True:
-            self.cookie = await self._login()
-            if not self.cookie:
-                logger.error('Can not obtain login cookie.')
-                return
-            
-            logger.info('Connecting to Socket.io')
-            await self.sio.connect(
-                'https://blhblh.be/',
-                headers={'Cookie': self.cookie},
-                socketio_path='socket.io',
-                retry=True,
-            )
+            if not self.sio.connected:
+                self.cookie = await self._login()
+                if not self.cookie:
+                    logger.error('Can not obtain login cookie.')
+                    return
+                
+                logger.info('Connecting to Socket.io')
+                await self.sio.connect(
+                    'https://blhblh.be/',
+                    headers={'Cookie': self.cookie},
+                    socketio_path='socket.io',
+                    retry=True,
+                )
 
-            await self.sio.wait()
-            await asyncio.sleep(5)
+            await asyncio.sleep(60)
 
 
 
@@ -164,9 +163,7 @@ class BlhBlhAdapter:
 
         while True:
             try:
-
-                # The `message` event handler will now automatically receive and publish
-                # We just need to keep the connection alive and periodically ask for new messages
+                await self.sio_connected_event.wait()
                 while self.sio.connected:
                     try:
                         await self.sio_connected_event.wait()
